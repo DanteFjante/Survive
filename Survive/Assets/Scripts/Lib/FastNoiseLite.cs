@@ -47,6 +47,11 @@
 // VERSION: 1.0.1
 // https://github.com/Auburn/FastNoise
 
+
+// Based on fastnoise lite by Jordan Peck (jordan.me2@gmail.com).
+// This is a modification by Dante Cavallin (dantecavallin@gmail.com)
+// with the purpose of compatibility using the Unity burst compiler.
+
 using System;
 using System.Runtime.CompilerServices;
 
@@ -54,7 +59,7 @@ using System.Runtime.CompilerServices;
 using FNLfloat = System.Single;
 //using FNLfloat = System.Double;
 
-public class FastNoiseLite
+public struct FastNoiseLite
 {
     private const short INLINE = 256; // MethodImplOptions.AggressiveInlining;
     private const short OPTIMISE = 512; // MethodImplOptions.AggressiveOptimization;
@@ -120,35 +125,53 @@ public class FastNoiseLite
         DefaultOpenSimplex2 
     };
 
-    private int mSeed = 1337;
-    private float mFrequency = 0.01f;
-    private NoiseType mNoiseType = NoiseType.OpenSimplex2;
-    private RotationType3D mRotationType3D = RotationType3D.None;
-    private TransformType3D mTransformType3D = TransformType3D.DefaultOpenSimplex2;
+    private int mSeed;
+    private float mFrequency;
+    private NoiseType mNoiseType;
+    private RotationType3D mRotationType3D;
+    private TransformType3D mTransformType3D;
 
-    private FractalType mFractalType = FractalType.None;
-    private int mOctaves = 3;
-    private float mLacunarity = 2.0f;
-    private float mGain = 0.5f;
-    private float mWeightedStrength = 0.0f;
-    private float mPingPongStength = 2.0f;
+    private FractalType mFractalType;
+    private int mOctaves;
+    private float mLacunarity;
+    private float mGain;
+    private float mWeightedStrength;
+    private float mPingPongStength;
 
-    private float mFractalBounding = 1 / 1.75f;
+    private float mFractalBounding;
 
-    private CellularDistanceFunction mCellularDistanceFunction = CellularDistanceFunction.EuclideanSq;
-    private CellularReturnType mCellularReturnType = CellularReturnType.Distance;
-    private float mCellularJitterModifier = 1.0f;
+    private CellularDistanceFunction mCellularDistanceFunction;
+    private CellularReturnType mCellularReturnType;
+    private float mCellularJitterModifier;
 
-    private DomainWarpType mDomainWarpType = DomainWarpType.OpenSimplex2;
-    private TransformType3D mWarpTransformType3D = TransformType3D.DefaultOpenSimplex2;
-    private float mDomainWarpAmp = 1.0f;
+    private DomainWarpType mDomainWarpType;
+    private TransformType3D mWarpTransformType3D;
+    private float mDomainWarpAmp;
 
     /// <summary>
     /// Create new FastNoise object with optional seed
     /// </summary>
     public FastNoiseLite(int seed = 1337)
     {
-        SetSeed(seed);
+        mSeed = 1337;
+        mFrequency = 0.01f;
+        mNoiseType = NoiseType.OpenSimplex2;
+        mRotationType3D = RotationType3D.None;
+        mTransformType3D = TransformType3D.DefaultOpenSimplex2;
+        mFractalType = FractalType.None;
+        mOctaves = 3;
+        mLacunarity = 2.0f;
+        mGain = 0.5f;
+        mWeightedStrength = 0.0f;
+        mPingPongStength = 2.0f;
+        mFractalBounding = 1 / 1.75f;
+        mCellularDistanceFunction = CellularDistanceFunction.EuclideanSq;
+        mCellularReturnType = CellularReturnType.Distance;
+        mCellularJitterModifier = 1.0f;
+        mDomainWarpType = DomainWarpType.OpenSimplex2;
+        mWarpTransformType3D = TransformType3D.DefaultOpenSimplex2;
+        mDomainWarpAmp = 1.0f;
+        
     }
 
     /// <summary>
@@ -165,7 +188,10 @@ public class FastNoiseLite
     /// <remarks>
     /// Default: 0.01
     /// </remarks>
-    public void SetFrequency(float frequency) { mFrequency = frequency; }
+    public void SetFrequency(float frequency)
+    {
+        mFrequency = 1 / frequency;
+    }
 
     /// <summary>
     /// Sets noise algorithm used for GetNoise(...)
