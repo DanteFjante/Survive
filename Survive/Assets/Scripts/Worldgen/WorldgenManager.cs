@@ -8,8 +8,8 @@ public class WorldgenManager : MonoBehaviour
     public MeshFilter meshFilter;
     
 
-    public Vector2Int size;
-    public float PointDistance;
+    public int width, height;
+    public float scale;
     public Biome defaultBiome;
 
     private void Awake()
@@ -33,7 +33,7 @@ public class WorldgenManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(meshFilter != null && meshFilter.mesh.vertexCount < size.x * size.y)
+        if(meshFilter != null && meshFilter.mesh.vertexCount < width * height)
         {
             Map map = createMap();
             meshFilter.mesh = MeshMaker.CreateFloor(map);
@@ -42,14 +42,13 @@ public class WorldgenManager : MonoBehaviour
 
     private Map createMap()
     {
-        Map map = new Map(size.x+1, size.y+1);
+        Map map = new Map(width+1, height+1, scale);
 
-        for (int i = 0; i < size.x+1; i++)
+        for (int i = 0; i < width+1; i++)
         {
-            for (int j = 0; j < size.y+1; j++)
+            for (int j = 0; j < height+1; j++)
             {
-                map.SetBiome(i,j, ref defaultBiome);
-                Vector3 pos = map.GetBiome(i, j).GetPosAt(i * PointDistance, j * PointDistance);
+                Vector3 pos = defaultBiome.GetPosAt(i * scale, j * scale);
 
                 map.SetPosition(i, j, pos);
 

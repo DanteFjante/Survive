@@ -190,7 +190,7 @@ public struct FastNoiseLite
     /// </remarks>
     public void SetFrequency(float frequency)
     {
-        mFrequency = 1 / frequency;
+        mFrequency = frequency;
     }
 
     /// <summary>

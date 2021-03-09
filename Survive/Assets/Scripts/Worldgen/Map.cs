@@ -1,78 +1,117 @@
 using System;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using Worldgen;
 
 [Serializable]
-public class Map
+public struct Map
 {
-    public MapPoint[,] map;
-    public int width => map.GetLength(0);
-    public int height => map.GetLength(1);
 
-    public Map(int width, int height)
+    public float3[] vectors;
+    public Color32[] colors;
+
+    [ReadOnly]
+    public int width;
+    
+    [ReadOnly]
+    public int height;
+
+    public float scale;
+
+    private JobHandle _handle;
+    public Map(int width, int height, float scale)
     {
-        map = new MapPoint[width,height];
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                map[x, y] = new MapPoint();
-            }
-        }
+        this.width = width;
+        this.height = height;
+        
+        vectors = new float3[width * height];
+        colors = new Color32[width * height];
+
+        this.scale = scale;
+        _handle = default;
+        ResetMap();
     }
     
-    public void AddBiomeMap(Biome[,] biomemap)
+    public void ResetMap()
     {
-        for (int i = 0; i < biomemap.GetLength(0); i++)
+        MapCreateJob jobs = new MapCreateJob();
+        jobs.scale = scale;
+        jobs.width = width;
+        jobs.returnArray = new NativeArray<float3>(vectors, Allocator.TempJob);
+
+        while (!_handle.IsCompleted)
         {
-            for (int j = 0; j < biomemap.GetLength(1); j++)
-            {
-                map[i, j].biome = biomemap[i, j];
-            }
+            Debug.Log("Map handle is busy resetting map");
         }
+        
+        _handle = jobs.Schedule(height * width, 100);
+        _handle.Complete();
+        vectors = jobs.returnArray.ToArray();
+        jobs.returnArray.CopyTo(vectors);
+        jobs.returnArray.Dispose();
+    }
+    
+    public void Colorize(Color lowColor, Color highcolor, float fromHeight, float toHeight)
+    {
+        MapColorizeJob jobs = new MapColorizeJob();
+        jobs.colors = new NativeArray<Color32>(colors, Allocator.TempJob);
+        jobs.vectors = new NativeArray<float3>(vectors, Allocator.TempJob);
+        jobs.lowColor = lowColor;
+        jobs.highColor = highcolor;
+        jobs.fromHeight = fromHeight;
+        jobs.toHeight = toHeight;
+
+        while (!_handle.IsCompleted)
+        {
+            Debug.Log("Map handle is busy colorizing map");
+        }
+        
+        _handle = jobs.Schedule(height * width, 100);
+        _handle.Complete();
+        colors = jobs.colors.ToArray();
+        jobs.colors.Dispose();
+        jobs.vectors.Dispose();
+    }
+
+    public bool IsReady()
+    {
+        return _handle.IsCompleted;
     }
 
     public void SetColor(int x, int y, Color color)
     {
-        map[x, y].color = color;
+        colors[x + y * width] = color;
     }
     
     public void SetHeight(int x, int y, float height)
     {
-        map[x, y].position.y = height;
+        float3 pos = vectors[x + y * width];
+        pos.y = height;
+        vectors[x + y * width] = pos;
     }
     
-    public void SetPosition(int x, int y, Vector3 position)
+    public void SetPosition(int x, int y, float3 position)
     {
-        map[x, y].position = position;
+        vectors[x + y * width] = position;
     }
-    
-    public void SetBiome(int x, int y, ref Biome biome)
-    {
-        map[x, y].biome = biome;
-    }
-    
+
     public float GetHeight(int x, int y)
     {
-        return map[x, y].position.y;
+        return vectors[x + y * width].y;
     }
     
     public Vector3 GetPosition(int x, int y)
     {
-        return map[x, y].position;
+        return vectors[x + y * width];
     }
     
     public Color GetColor(int x, int y)
     {
-        return map[x, y].color;
+        return colors[x + y * width];
     }
     
-    public Biome GetBiome(int x, int y)
-    {
-        return map[x, y].biome;
-    }
-
-
     public struct MapPoint
     {
         public Vector3 position;

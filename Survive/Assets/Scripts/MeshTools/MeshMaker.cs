@@ -1,46 +1,33 @@
-using System.Collections.Generic;
+using System.Linq;
+using Unity.Jobs;
 using UnityEngine;
+using Worldgen;
 
 public static class MeshMaker
 {
-
     public static Mesh CreateFloor(Map map)
     {
-        List<int> indices = new List<int>();
-        List<Vector3> vertices = new List<Vector3>();
-        List<Vector2> uvs = new List<Vector2>();
-        List<Color> colors = new List<Color>();
-        
-        for (int i = 0; i < map.width; i++)
-        {
-            for (int j = 0; j < map.height; j++)
-            {
-
-                vertices.Add(map.GetPosition(i,j));
-
-                if(i < map.width -1 && j < map.height - 1)
-                {
-                    int width = map.width;
-                    indices.Add(i + j * width + 1);
-                    indices.Add(i + j * width + width);
-                    indices.Add(i + j * width);
-                    
-                    indices.Add(i + j * width + 1);
-                    indices.Add(i + j * width + width + 1);
-                    indices.Add(i + j * width + width);
-                }
-
-                uvs.Add(new Vector2(i, j));
-                
-                colors.Add(map.GetColor(i, j));
-            }
-        }
         
         Mesh mesh = new Mesh();
-        mesh.vertices = vertices.ToArray();
-        mesh.triangles = indices.ToArray();
-        mesh.uv = uvs.ToArray();
-        mesh.colors = colors.ToArray();
+
+        TrianglesAndUvsForPlaneJob job = new TrianglesAndUvsForPlaneJob();
+        job.height = map.height;
+        job.width = map.width;
+
+        JobHandle handle = job.Schedule();
+        
+        handle.Complete();
+
+        while (!handle.IsCompleted) ;
+
+        mesh.triangles = job.returnIndicies.ToArray();
+        mesh.uv = job.returnUvs.Select(p => new Vector2(p.x, p.y)).ToArray();
+
+        job.returnUvs.Dispose();
+        job.returnIndicies.Dispose();
+        
+        mesh.vertices = map.vectors.Select(p => new Vector3(p.x, p.y, p.z)).ToArray();
+        mesh.colors32 = map.colors;
 
         return mesh;
     }

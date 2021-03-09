@@ -24,7 +24,7 @@ namespace GenerationTools
         /// Sets seed for all noise types
         public int seed;
         
-        /// Sets frequency for all noise types. Results in 1 / frequency opposed to how its made traditionally.
+        /// Sets frequency for all noise types.
         public float frequency;
     
         /// What noise algorithm to use.
@@ -218,6 +218,16 @@ namespace GenerationTools
             pos.y = GetNoiseValue(posXYZ);
             if (invert)
                 pos.y = 1 - pos.y;
+        }
+        
+        public FastNoiseLite GetFractalNoise()
+        {
+            return _fractalNoise;
+        }
+        
+        public FastNoiseLite GetDomainNoise()
+        {
+            return _domainNoise;
         }
 
     }
